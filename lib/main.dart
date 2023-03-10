@@ -12,8 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SharedPrefController().init();
   runApp(ChangeNotifierProvider(
-    create: (context) => PostProvider(),
-    child: const MyApp()));
+      create: (context) => PostProvider(), child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

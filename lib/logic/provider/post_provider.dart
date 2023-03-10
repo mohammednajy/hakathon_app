@@ -14,28 +14,40 @@ import '../../utils/helper.dart';
 class PostProvider extends ChangeNotifier {
   List<PostModel> posts = [];
   bool isLoading = false;
-
+  List<PostModel> searchPosts = [];
   void setLoading(bool value) {
     isLoading = value;
     notifyListeners();
   }
 
-  void getAllPost({required String token}) async {
+  searchPost({required String postName}) {
+    searchPosts = posts
+        .where((element) =>
+            element.text.toUpperCase().startsWith(postName.toUpperCase()))
+        .toList();
+
+    notifyListeners();
+  }
+
+  getAllPost({required String token}) async {
+    setLoading(true);
     try {
       final response =
           await PostApi.getAllPost(offset: 0, limit: 10, token: token);
       if (response.statusCode == 200) {
         List<dynamic> usersList = response.data["data"]["posts"];
-
+        print(response.data);
         for (var element in usersList) {
           posts.add(PostModel.fromJson(element));
+          notifyListeners();
         }
         posts = posts.reversed.toList();
         notifyListeners();
+        setLoading(false);
       }
       // setLoading(false);
     } on DioError catch (e) {
-      // setLoading(false);
+      setLoading(false);
       final errorMessage = DioExceptions.fromDioError(e);
       UtilsConfig.showSnackBarMessage(message: errorMessage, status: false);
     }
