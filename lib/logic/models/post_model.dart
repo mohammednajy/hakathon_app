@@ -15,7 +15,7 @@ class PostModel {
     return PostModel(
         sId: json['_id'],
         user: User.fromJson(json['user']),
-        text: json['text'],
+        text: json['text'] ?? '',
         image: json['image'] ?? "");
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -15,8 +16,47 @@ class PostProvider extends ChangeNotifier {
   List<PostModel> posts = [];
   bool isLoading = false;
   List<PostModel> searchPosts = [];
+  int count = 0;
+  bool isLoadMoreRunning = false;
+  bool hasNextPage = true;
+  int offset = 10;
+  int limit = 10;
   void setLoading(bool value) {
     isLoading = value;
+    notifyListeners();
+  }
+
+  loadMore({
+    required final String token,
+  }) async {
+    isLoadMoreRunning = true;
+    hasNextPage = true;
+    notifyListeners();
+    final response =
+        await PostApi.getAllPost(offset: offset, limit: limit, token: token);
+    if (response.statusCode == 200) {
+      final List data = response.data["data"]["posts"];
+      if (data.isNotEmpty) {
+        List<PostModel> moreUsers =
+            data.map((e) => PostModel.fromJson(e)).toList();
+        posts.addAll(moreUsers);
+        notifyListeners();
+      } else {
+        hasNextPage = false;
+        Timer(
+          const Duration(seconds: 1),
+          () {
+            hasNextPage = true;
+            notifyListeners();
+          },
+        );
+
+        notifyListeners();
+      }
+    }
+
+    isLoadMoreRunning = false;
+    offset = posts.length;
     notifyListeners();
   }
 
@@ -37,6 +77,7 @@ class PostProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         List<dynamic> usersList = response.data["data"]["posts"];
         print(response.data);
+        count = response.data["data"]["count"];
         for (var element in usersList) {
           posts.add(PostModel.fromJson(element));
           notifyListeners();
@@ -119,7 +160,7 @@ class PostProvider extends ChangeNotifier {
       posts[index] = PostModel.fromJson(response.data["data"]);
       notifyListeners();
       UtilsConfig.showSnackBarMessage(
-        message: "add successfully",
+        message: "edit successfully",
         status: true,
       );
       AppRouter.back();
@@ -129,7 +170,7 @@ class PostProvider extends ChangeNotifier {
   void refreshPosts({required String token}) async {
     try {
       final response =
-          await PostApi.getAllPost(offset: 0, limit: 10, token: token);
+          await PostApi.getAllPost(offset: 0, limit: count + 2, token: token);
       if (response.statusCode == 200) {
         List<dynamic> usersList = response.data["data"]["posts"];
 
@@ -150,14 +191,21 @@ class PostProvider extends ChangeNotifier {
     required String email,
     required String permission,
   }) async {
-    final Response response = await PostApi.sharePost(
-      email: email,
-      id: id,
-      permission: permission,
-      token: token,
-    );
-    if (response.statusCode == 200) {
-      print(response.data);
+    try {
+      final Response response = await PostApi.sharePost(
+        email: email,
+        id: id,
+        permission: permission,
+        token: token,
+      );
+      if (response.statusCode == 200) {
+        UtilsConfig.showSnackBarMessage(
+            message: response.data["message"], status: true);
+        AppRouter.back();
+      }
+    } on DioError catch (e) {
+      final errorMessage = DioExceptions.fromDioError(e);
+      UtilsConfig.showSnackBarMessage(message: errorMessage, status: false);
     }
   }
 
