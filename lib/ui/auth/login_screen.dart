@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hakathon_app/logic/localData/shared_pref.dart';
 import 'package:hakathon_app/logic/provider/auth_provider.dart';
 import 'package:hakathon_app/ui/auth/signup_screen.dart';
 import 'package:hakathon_app/utils/validation.dart';
@@ -22,6 +23,12 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   TextEditingController textEditingController = TextEditingController();
   GlobalKey<FormFieldState> passKey = GlobalKey<FormFieldState>();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   void dispose() {
     textEditingController.dispose();
@@ -61,7 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 isLoading: context.watch<AuthProvider>().isLoading,
                 onPressed: () {
                   if (passKey.currentState!.validate()) {
-                    context.read<AuthProvider>().login(email: textEditingController.text);
+                    context
+                        .read<AuthProvider>()
+                        .login(email: textEditingController.text);
                   }
                 },
                 text: 'Login',

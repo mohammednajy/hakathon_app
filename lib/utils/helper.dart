@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hakathon_app/router/app_router.dart';
 
 class UtilsConfig {
-  static final navigatorKey = GlobalKey<NavigatorState>();
-
   static final GlobalKey<ScaffoldMessengerState> scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
 
@@ -15,9 +14,11 @@ class UtilsConfig {
     ));
   }
 
+
+
   static Future<bool?> showAlertDialog() async {
     bool? result = await showDialog(
-        context: navigatorKey.currentContext!,
+        context: AppRouter.navigationKey.currentContext!,
         builder: (ctx) {
           return AlertDialog(
             content: const Text('Are you sure?'),

@@ -67,14 +67,13 @@ class PostApi {
   static Future<Response> editPost({
     required String token,
     required String id,
-    required String text,
+    required dynamic data,
+    // required String text,
   }) async {
     try {
       return await BaseClient().put(
         '${EndPoints.editPostEndPoint}$id',
-        data: {
-          "text": text,
-        },
+        data: data,
         options: Options(
           headers: {
             "Authorization": "Bearer $token",

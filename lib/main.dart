@@ -6,7 +6,7 @@ import 'package:hakathon_app/router/router_name.dart';
 import 'package:hakathon_app/utils/helper.dart';
 import 'package:provider/provider.dart';
 
-import 'logic/localData/shared_pref.dart';
+import 'logic/localData/shared_pref.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

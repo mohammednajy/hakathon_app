@@ -1,10 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:hakathon_app/logic/localData/shared_pref.dart';
+import 'package:hakathon_app/logic/models/post_model.dart';
 import 'package:hakathon_app/logic/provider/post_provider.dart';
 import 'package:hakathon_app/ui/auth/signup_screen.dart';
 import 'package:hakathon_app/utils/constant.dart';
 import 'package:provider/provider.dart';
 
+import '../../api/app_exception.dart';
+import '../../utils/helper.dart';
 import '../shared/edit_widget.dart';
 import '../shared/sharing_post.dart';
 import '../shared/text_field_custom.dart';
@@ -19,12 +23,14 @@ class PostScreen extends StatefulWidget {
 class _PostScreenState extends State<PostScreen> {
   TextEditingController nameController = TextEditingController();
   late ScrollController scrollController;
+  late Future<List<PostModel>> posts;
   @override
   void initState() {
     super.initState();
-    context.read<PostProvider>().getAllPost(
-          token: SharedPrefController().getUser().accessToken,
-        );
+    posts = Provider.of<PostProvider>(context, listen: false).getAllPost(
+      token: SharedPrefController().getUser().accessToken,
+    );
+
     scrollController = ScrollController()..addListener(loadMore);
   }
 
@@ -67,19 +73,34 @@ class _PostScreenState extends State<PostScreen> {
           style: TextStyle(color: blueColor),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () {
+              context.read<PostProvider>().logout();
+            },
+            icon: const Icon(
+              Icons.exit_to_app,
+              color: Colors.black,
+            ),
+          )
+        ],
       ),
       drawer: Container(
         padding: const EdgeInsets.only(top: 50),
         color: Colors.white,
         width: 200,
         height: double.infinity,
-        child: const ListTile(
-          title: Text('John Smith'),
-          leading: CircleAvatar(),
+        child: ListTile(
+          title: Text(SharedPrefController().getUser().data.name),
+          leading: const CircleAvatar(
+            backgroundImage:
+                NetworkImage('https://www.w3schools.com/w3images/avatar2.png'),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          context.read<PostProvider>().cancelImage();
           showModalBottomSheet(
             shape: const OutlineInputBorder(
                 borderRadius: BorderRadius.only(
@@ -105,232 +126,291 @@ class _PostScreenState extends State<PostScreen> {
                 color: Colors.blue,
               ),
             )
-          : context.watch<PostProvider>().posts.isEmpty
-              ? const Center(
-                  child: Text(
-                  'NO Posts',
-                  style: TextStyle(fontSize: 30),
-                ))
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      TextField(
-                        controller: nameController,
-                        onChanged: (value) {
-                          context
-                              .read<PostProvider>()
-                              .searchPost(postName: value);
-                        },
-                        decoration: InputDecoration(
-                            suffixIcon: const Icon(Icons.search),
-                            label: const Text('Search'),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            )),
-                      ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      Expanded(
-                        child: Consumer<PostProvider>(
-                          builder: (context, providerValue, child) =>
-                              ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            controller: scrollController,
-                            itemBuilder: (context, index) => Column(
-                              children: [
-                                Card(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10)),
-                                    margin: const EdgeInsets.only(bottom: 15),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 10),
-                                      child: ListTile(
-                                        leading: CircleAvatar(
-                                            radius: 25,
-                                            backgroundImage: NetworkImage(nameController
-                                                    .text.isEmpty
-                                                ? (providerValue.posts[index]
-                                                            .image ==
-                                                        ""
-                                                    ? 'https://www.w3schools.com/w3images/avatar2.png'
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  TextField(
+                    controller: nameController,
+                    onChanged: (value) {
+                      context.read<PostProvider>().searchPost(postName: value);
+                    },
+                    decoration: InputDecoration(
+                        suffixIcon: const Icon(Icons.search),
+                        label: const Text('Search'),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        )),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  FutureBuilder<List<PostModel>>(
+                      future: posts,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          if (snapshot.error.runtimeType == DioError) {
+                            final errorMessage = DioExceptions.fromDioError(
+                                snapshot.error as DioError);
+                            return UtilsConfig.showSnackBarMessage(
+                                message: errorMessage, status: false);
+                          }
+                        } else if (snapshot.hasData) {
+                          if (snapshot.data!.isEmpty) {
+                            return const Text(
+                              'NO Posts',
+                              style: TextStyle(
+                                fontSize: 25,
+                                color: Colors.black,
+                              ),
+                            );
+                          }
+
+                          List<PostModel> postsList = snapshot.data!;
+                          return Expanded(
+                            child: Consumer<PostProvider>(
+                              builder: (context, providerValue, child) =>
+                                  ListView.builder(
+                                physics: const BouncingScrollPhysics(),
+                                controller: scrollController,
+                                itemBuilder: (context, index) => Column(
+                                  children: [
+                                    Card(
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 15),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 10),
+                                          child: ListTile(
+                                            leading: CircleAvatar(
+                                                radius: 25,
+                                                backgroundImage: nameController
+                                                        .text.isEmpty
+                                                    ? (postsList[index].image !=
+                                                            ""
+                                                        ? NetworkImage(
+                                                            postsList[index]
+                                                                .image!)
+                                                        : null)
                                                     : providerValue
-                                                        .posts[index].image!)
-                                                : (providerValue
-                                                            .searchPosts[index]
-                                                            .image ==
-                                                        ""
-                                                    ? 'https://www.w3schools.com/w3images/avatar2.png'
+                                                                .searchPosts[
+                                                                    index]
+                                                                .image !=
+                                                            ""
+                                                        ? NetworkImage(
+                                                            providerValue
+                                                                .searchPosts[
+                                                                    index]
+                                                                .image!)
+                                                        : null,
+                                                child: nameController
+                                                        .text.isEmpty
+                                                    ? (postsList[index].image ==
+                                                            ""
+                                                        ? const Icon(
+                                                            Icons.image)
+                                                        : null)
                                                     : providerValue
-                                                        .searchPosts[index]
-                                                        .image!))),
-                                        title: Padding(
-                                          padding: EdgeInsets.only(bottom: 8),
-                                          child: Text(
-                                            nameController.text.isEmpty
-                                                ? providerValue
-                                                    .posts[index].user.name
-                                                : providerValue
-                                                    .searchPosts[index]
-                                                    .user
-                                                    .name,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        subtitle: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Flexible(
-                                              flex: 6,
+                                                                .searchPosts[index]
+                                                                .image ==
+                                                            ""
+                                                        ? const Icon(Icons.image)
+                                                        : null),
+                                            title: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  bottom: 8),
                                               child: Text(
                                                 nameController.text.isEmpty
-                                                    ? providerValue
-                                                        .posts[index].text
+                                                    ? postsList[index].user.name
                                                     : providerValue
                                                         .searchPosts[index]
-                                                        .text,
+                                                        .user
+                                                        .name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
-                                            Flexible(
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                children: [
-                                                  Builder(builder: (context) {
-                                                    return PopupMenuButton(
-                                                      icon: const Icon(
-                                                        Icons.more_vert,
-                                                        size: 20,
-                                                      ),
-                                                      onSelected: (value) {
-                                                        if (value == 0) {
-                                                          showModalBottomSheet(
-                                                            shape:
-                                                                const OutlineInputBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .only(
-                                                                      topLeft: Radius
-                                                                          .circular(
-                                                                              15),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              15),
-                                                                    ),
-                                                                    borderSide:
-                                                                        BorderSide
-                                                                            .none),
-                                                            backgroundColor:
-                                                                Colors.white,
-                                                            context: context,
-                                                            isScrollControlled:
-                                                                true,
-                                                            builder:
-                                                                (context) =>
-                                                                    SizedBox(
-                                                              child:
-                                                                  ContentOfBottomSheet(
+                                            subtitle: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Flexible(
+                                                  flex: 6,
+                                                  child: Text(
+                                                    nameController.text.isEmpty
+                                                        ? postsList[index].text
+                                                        : providerValue
+                                                            .searchPosts[index]
+                                                            .text,
+                                                  ),
+                                                ),
+                                                Flexible(
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                    children: [
+                                                      Builder(
+                                                          builder: (context) {
+                                                        return PopupMenuButton(
+                                                          icon: const Icon(
+                                                            Icons.more_vert,
+                                                            size: 20,
+                                                          ),
+                                                          onSelected: (value) {
+                                                            if (value == 0) {
+                                                              providerValue
+                                                                  .cancelImage();
+                                                              showModalBottomSheet(
+                                                                shape:
+                                                                    const OutlineInputBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius
+                                                                                .only(
+                                                                          topLeft:
+                                                                              Radius.circular(15),
+                                                                          topRight:
+                                                                              Radius.circular(15),
+                                                                        ),
+                                                                        borderSide:
+                                                                            BorderSide.none),
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .white,
+                                                                context:
+                                                                    context,
+                                                                isScrollControlled:
+                                                                    true,
+                                                                builder:
+                                                                    (context) =>
+                                                                        SizedBox(
+                                                                  child:
+                                                                      ContentOfBottomSheet(
+                                                                    image: providerValue
+                                                                            .posts[index]
+                                                                            .image ??
+                                                                        '',
+                                                                    id: providerValue
+                                                                        .posts[
+                                                                            index]
+                                                                        .sId,
+                                                                    isEdit:
+                                                                        true,
+                                                                    postText: providerValue
+                                                                        .posts[
+                                                                            index]
+                                                                        .text,
+                                                                    midea: MediaQuery.of(
+                                                                            context)
+                                                                        .size,
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            }
+                                                            if (value == 1) {
+                                                              providerValue
+                                                                  .deletePost(
+                                                                token: SharedPrefController()
+                                                                    .getUser()
+                                                                    .accessToken,
                                                                 id: providerValue
                                                                     .posts[
                                                                         index]
                                                                     .sId,
-                                                                isEdit: true,
-                                                                postText:
-                                                                    providerValue
+                                                              );
+                                                            }
+                                                          },
+                                                          itemBuilder: (_) => [
+                                                            const PopupMenuItem(
+                                                              value: 0,
+                                                              child:
+                                                                  Text('Edit'),
+                                                            ),
+                                                            const PopupMenuItem(
+                                                              value: 1,
+                                                              child: Text(
+                                                                  'Delete'),
+                                                            )
+                                                          ],
+                                                        );
+                                                      }),
+                                                      SharedPrefController()
+                                                                  .getUser()
+                                                                  .data
+                                                                  .sId ==
+                                                              providerValue
+                                                                  .posts[index]
+                                                                  .user
+                                                                  .sId
+                                                          ? IconButton(
+                                                              onPressed: () {
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder: (ctx) =>
+                                                                      SharingPost(
+                                                                    id: providerValue
                                                                         .posts[
                                                                             index]
-                                                                        .text,
-                                                                midea: MediaQuery.of(
-                                                                        context)
-                                                                    .size,
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-                                                        if (value == 1) {
-                                                          providerValue
-                                                              .deletePost(
-                                                            token:
-                                                                SharedPrefController()
-                                                                    .getUser()
-                                                                    .accessToken,
-                                                            id: providerValue
-                                                                .posts[index]
-                                                                .sId,
-                                                          );
-                                                        }
-                                                      },
-                                                      itemBuilder: (_) => [
-                                                        const PopupMenuItem(
-                                                          value: 0,
-                                                          child: Text('Edit'),
-                                                        ),
-                                                        const PopupMenuItem(
-                                                          child: Text('Delete'),
-                                                          value: 1,
-                                                        )
-                                                      ],
-                                                    );
-                                                  }),
-                                                  IconButton(
-                                                      onPressed: () {
-                                                        showDialog(
-                                                          context: context,
-                                                          builder: (ctx) =>
-                                                              SharingPost(
-                                                            id: providerValue
-                                                                .posts[index]
-                                                                .sId,
-                                                          ),
-                                                        );
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.share,
-                                                        size: 20,
-                                                      ))
-                                                ],
-                                              ),
-                                            )
-                                          ],
+                                                                        .sId,
+                                                                  ),
+                                                                );
+                                                              },
+                                                              icon: const Icon(
+                                                                Icons.share,
+                                                                size: 20,
+                                                              ))
+                                                          : const SizedBox()
+                                                    ],
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        )),
+                                    if (providerValue.isLoadMoreRunning ==
+                                            true &&
+                                        index == providerValue.posts.length - 1)
+                                      const Center(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.black,
                                         ),
                                       ),
-                                    )),
-                                if (providerValue.isLoadMoreRunning == true &&
-                                    index == providerValue.posts.length - 1)
-                                  const Center(
-                                    child: CircularProgressIndicator(
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                              ],
+                                  ],
+                                ),
+                                itemCount: nameController.text.isEmpty
+                                    ? providerValue.posts.length
+                                    : providerValue.searchPosts.length,
+                              ),
                             ),
-                            itemCount: nameController.text.isEmpty
-                                ? providerValue.posts.length
-                                : providerValue.searchPosts.length,
-                          ),
-                        ),
+                          );
+                        }
+                        return Text('Something wrong');
+                      }),
+                  if (context.watch<PostProvider>().hasNextPage == false)
+                    const Center(
+                      child: Text(
+                        'End of posts',
+                        style: TextStyle(fontSize: 20),
                       ),
-                      if (context.watch<PostProvider>().hasNextPage == false)
-                        const Center(
-                          child: Text(
-                            'End of posts',
-                            style: TextStyle(fontSize: 20),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
+              ),
+            ),
     );
   }
 }

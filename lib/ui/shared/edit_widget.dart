@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hakathon_app/logic/localData/shared_pref.dart';
+import 'package:hakathon_app/logic/models/post_model.dart';
 import 'package:hakathon_app/logic/provider/post_provider.dart';
 import 'package:hakathon_app/ui/shared/cutom_button_widget.dart';
 import 'package:provider/provider.dart';
@@ -9,13 +10,15 @@ class ContentOfBottomSheet extends StatefulWidget {
     this.isEdit = false,
     super.key,
     required this.midea,
-    this.id='',
+    this.id = '',
     this.postText = '',
+    this.image = '',
   });
   final bool isEdit;
   final Size midea;
   final String postText;
   final String id;
+  final String image;
   @override
   State<ContentOfBottomSheet> createState() => _ContentOfBottomSheetState();
 }
@@ -50,12 +53,12 @@ class _ContentOfBottomSheetState extends State<ContentOfBottomSheet> {
               children: [
                 Text(
                   widget.isEdit ? 'Edit Post' : 'Add Post',
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.black),
                 ),
-                Text(''),
+                const Text(''),
               ],
             ),
             SizedBox(height: widget.midea.height * 0.023),
@@ -69,47 +72,66 @@ class _ContentOfBottomSheetState extends State<ContentOfBottomSheet> {
             SizedBox(height: widget.midea.height * 0.023),
             //---------------------------------------------------------------------------
             !widget.isEdit
-                ? Builder(builder: (context) {
-                    return InkWell(
-                      onTap: () {
-                        // context.read<PostProvider>().pickFile();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(15),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all()),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                ? context.watch<PostProvider>().image != null
+                    ? Card(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Text(
-                                  'Upload your image',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue),
-                                ),
-                                SizedBox(width: 10),
-                                Icon(
-                                  Icons.upload_file,
-                                  color: Colors.blue,
-                                ),
-                              ],
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundImage: FileImage(
+                                context.watch<PostProvider>().image!,
+                              ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                                'Drag and drop or browse to choose a file',
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.grey)),
+                            IconButton(
+                                onPressed: () {
+                                  context.read<PostProvider>().cancelImage();
+                                },
+                                icon: const Icon(
+                                  Icons.cancel,
+                                ))
                           ],
                         ),
-                      ),
-                    );
-                  })
+                      )
+                    : InkWell(
+                        onTap: () async {
+                          return await context.read<PostProvider>().pickImage();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(15),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all()),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Text(
+                                    'Upload your image',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Icon(
+                                    Icons.upload_file,
+                                    color: Colors.blue,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                  'Drag and drop or browse to choose a file',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      )
                 : Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
@@ -119,19 +141,50 @@ class _ContentOfBottomSheetState extends State<ContentOfBottomSheet> {
                         border: Border.all()),
                     child: Row(
                       children: [
-                        const CircleAvatar(
-                          radius: 35,
-                          backgroundColor: Color(0xFFF5F5F5),
-                          child: Icon(
-                            Icons.image,
-                            color: Colors.black,
-                          ),
-                        ),
+                        Consumer<PostProvider>(
+                            builder: (context, value, child) => Container(
+                                  height: 60,
+                                  width: 60,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: widget.image == ''
+                                        ? null
+                                        : value.image == null
+                                            ? DecorationImage(
+                                                image: NetworkImage(
+                                                  widget.image,
+                                                ),
+                                                fit: BoxFit.fill,
+                                              )
+                                            : DecorationImage(
+                                                image: FileImage(
+                                                  value.image!,
+                                                ),
+                                                fit: BoxFit.fill),
+                                  ),
+                                  child:
+                                      widget.image == '' && value.image == null
+                                          ? const Icon(Icons.image)
+                                          : null,
+                                )
+
+                            //  CircleAvatar(
+                            //   radius: 35,
+                            //   backgroundImage: widget.image == ''
+                            //       ? null
+                            //       : NetworkImage(widget.image),
+                            //   child: widget.image == ''
+                            //       ? const Icon(Icons.image)
+                            //       : null,
+                            // ),
+                            ),
                         const Spacer(),
                         Column(
                           children: [
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                context.read<PostProvider>().pickImage();
+                              },
                               child: const Text(
                                 'Upload your image',
                                 style: TextStyle(
@@ -142,7 +195,9 @@ class _ContentOfBottomSheetState extends State<ContentOfBottomSheet> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                // context.read<PostProvider>().cancelImage();
+                              },
                               child: const Text(
                                 'Delete',
                                 style: TextStyle(
@@ -162,13 +217,19 @@ class _ContentOfBottomSheetState extends State<ContentOfBottomSheet> {
             Consumer<PostProvider>(
               builder: (context, value, child) => CustomButtonWidget(
                 onPressed: () {
-                widget.isEdit? 
-                value.editPost(token: SharedPrefController().getUser().accessToken, id: widget.id, text: controller.text)
-                :  value.addPost(
-                    token: SharedPrefController().getUser().accessToken,
-                    postText: controller.text,
-                    // file: value.file,
-                  );
+                  widget.isEdit
+                      ? value.editPost(
+                          file: value.image,
+                          token: SharedPrefController().getUser().accessToken,
+                          id: widget.id,
+                          text: controller.text,
+                        )
+                      : value.addPost(
+                          file: value.image,
+                          token: SharedPrefController().getUser().accessToken,
+                          postText: controller.text,
+                          // file: value.file,
+                        );
                 },
                 isLoading: false,
                 text: widget.isEdit ? 'Edit' : 'Add',
