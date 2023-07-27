@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hakathon_app/logic/localData/shared_pref.dart';
 import 'package:hakathon_app/logic/provider/auth_provider.dart';
-import 'package:hakathon_app/ui/auth/signup_screen.dart';
+import 'package:hakathon_app/router/app_router.dart';
+import 'package:hakathon_app/router/router_name.dart';
+import 'package:hakathon_app/ui/shared/auth_custom_widget.dart';
+import 'package:hakathon_app/ui/shared/cutom_button_widget.dart';
+import 'package:hakathon_app/ui/shared/logo_widget.dart';
+import 'package:hakathon_app/ui/shared/rich_text_custom.dart';
+import 'package:hakathon_app/ui/shared/text_field_custom.dart';
 import 'package:hakathon_app/utils/validation.dart';
 import 'package:provider/provider.dart';
-
-import '../../router/app_router.dart';
-import '../../router/router_name.dart';
-import '../shared/auth_custom_widget.dart';
-import '../shared/cutom_button_widget.dart';
-import '../shared/logo_widget.dart';
-import '../shared/rich_text_custom.dart';
-import '../shared/text_field_custom.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 60),
               const LogoWidget(),
               const AuthCustomWidget(
                 firstText: 'Login',
@@ -75,9 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 text: 'Login',
               ),
-              const SizedBox(
-                height: 200,
-              ),
+              SizedBox(height: MediaQuery.sizeOf(context).height * 0.1),
               RichTextCustom(
                   leftText: 'Don\'t have an account?',
                   rightText: ' Sign up',

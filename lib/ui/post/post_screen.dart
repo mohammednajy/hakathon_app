@@ -1,17 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:hakathon_app/api/app_exception.dart';
 import 'package:hakathon_app/logic/localData/shared_pref.dart';
 import 'package:hakathon_app/logic/models/post_model.dart';
 import 'package:hakathon_app/logic/provider/post_provider.dart';
-import 'package:hakathon_app/ui/auth/signup_screen.dart';
+import 'package:hakathon_app/ui/shared/edit_widget.dart';
+import 'package:hakathon_app/ui/shared/sharing_post.dart';
 import 'package:hakathon_app/utils/constant.dart';
+import 'package:hakathon_app/utils/helper.dart';
 import 'package:provider/provider.dart';
-
-import '../../api/app_exception.dart';
-import '../../utils/helper.dart';
-import '../shared/edit_widget.dart';
-import '../shared/sharing_post.dart';
-import '../shared/text_field_custom.dart';
 
 class PostScreen extends StatefulWidget {
   const PostScreen({super.key});
@@ -24,6 +21,7 @@ class _PostScreenState extends State<PostScreen> {
   TextEditingController nameController = TextEditingController();
   late ScrollController scrollController;
   late Future<List<PostModel>> posts;
+
   @override
   void initState() {
     super.initState();

@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       scaffoldMessengerKey: UtilsConfig.scaffoldKey,
       debugShowCheckedModeBanner: false,
-      initialRoute: ScreenName.loginScreen,
+      initialRoute: ScreenName.splashScreen,
       onGenerateRoute: onGenerateRoute,
       navigatorKey: AppRouter.navigationKey,
     );

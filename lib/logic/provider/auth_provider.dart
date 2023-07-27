@@ -28,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
 
         SharedPrefController().save(UserModel.fromJson(response.data["data"],));
+        SharedPrefController().setLogedin();
         UtilsConfig.showSnackBarMessage(
             message: 'Login Successfully', status: true);
         AppRouter.goAndRemove(ScreenName.postScreen);

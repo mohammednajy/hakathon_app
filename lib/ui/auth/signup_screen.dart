@@ -1,17 +1,14 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hakathon_app/logic/provider/auth_provider.dart';
 import 'package:hakathon_app/router/app_router.dart';
 import 'package:hakathon_app/router/router_name.dart';
+import 'package:hakathon_app/ui/shared/auth_custom_widget.dart';
+import 'package:hakathon_app/ui/shared/cutom_button_widget.dart';
+import 'package:hakathon_app/ui/shared/logo_widget.dart';
+import 'package:hakathon_app/ui/shared/rich_text_custom.dart';
+import 'package:hakathon_app/ui/shared/text_field_custom.dart';
 import 'package:hakathon_app/utils/validation.dart';
 import 'package:provider/provider.dart';
-
-import '../../utils/constant.dart';
-import '../shared/auth_custom_widget.dart';
-import '../shared/cutom_button_widget.dart';
-import '../shared/logo_widget.dart';
-import '../shared/rich_text_custom.dart';
-import '../shared/text_field_custom.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -24,6 +21,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController nameEditingController = TextEditingController();
   TextEditingController emailEditingController = TextEditingController();
   GlobalKey<FormState> keyForm = GlobalKey<FormState>();
+
   @override
   void dispose() {
     nameEditingController.dispose();
@@ -36,7 +34,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
         child: SingleChildScrollView(
           child: Form(
             key: keyForm,
@@ -98,8 +96,3 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
-
-
-
-
-
